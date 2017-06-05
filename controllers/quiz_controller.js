@@ -3,6 +3,11 @@ var Sequelize = require('sequelize');
 
 var paginate = require('../helpers/paginate').paginate;
 
+var score = 0;
+var array;
+var num;
+var empieza=0;
+var numero;
 // Autoload el quiz asociado a :quizId
 exports.load = function (req, res, next, quizId) {
 
@@ -186,4 +191,78 @@ exports.check = function (req, res, next) {
         result: result,
         answer: answer
     });
+};
+
+// GET randomplay
+exports.randomplay = function (req, res, next) {
+
+    var answer = req.query.answer || '';
+    if (empieza == 0) {
+        models.Quiz.findAll()
+            .then(function (quizzes) {
+                empieza = 1;
+                num = quizzes.length;
+                array = new Array(num);
+                numero = Math.floor(Math.random() * (num - 0));
+                var quiz = quizzes[numero];
+                res.render('quizzes/randomplay.ejs', {
+                    quiz: quiz,
+                    score: score,
+                    answer: answer
+                });
+            })
+    } else {
+        models.Quiz.findAll()
+            .then(function (quizzes) {
+                empieza = 1;
+                numero = Math.floor(Math.random() * (num - 0));
+                for(var i=0;i<num;i++){
+                    if(numero==array[i]){
+                        numero = Math.floor(Math.random() * (num - 0));
+                        i=-1;
+                    }
+                }
+                var quiz = quizzes[numero];
+                res.render('quizzes/randomplay.ejs', {
+                    quiz: quiz,
+                    score: score,
+                    answer: answer
+                });
+            })
+    }
+
+
+};
+
+// GET randomcheck
+exports.randomcheck = function (req, res, next) {
+    var countOptions = {};
+    array[score] = numero;
+
+    var answer = req.query.answer || "";
+
+    var result = answer.toLowerCase().trim() === req.quiz.answer.toLowerCase().trim();
+    if (result) {
+        score = score + 1;
+    }
+    if (score == num) {
+        res.render('quizzes/randomnomore', {
+            score: score
+        });
+        score = 0;
+        empieza=0;
+    } else {
+        res.render('quizzes/randomcheck', {
+            quiz: req.quiz,
+            result: result,
+            answer: answer,
+            score: score
+        });
+        if (!result) {
+            score = 0;
+            empieza=0;
+        }
+    }
+
+
 };
